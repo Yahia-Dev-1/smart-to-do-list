@@ -1,0 +1,113 @@
+.calendar-container {
+    background: var(--bg-card);
+    padding: 24px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--glass-shadow);
+    width: 100%;
+    animation: revealUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.calendar-container h2 {
+    font-size: 1.1rem;
+    font-weight: 850;
+    margin-bottom: 20px;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* react-calendar overrides */
+.react-calendar {
+    width: 100% !important;
+    border: none !important;
+    font-family: inherit !important;
+    background: transparent !important;
+}
+
+.react-calendar__tile--now {
+    background: #eff6ff !important;
+    font-weight: 800 !important;
+}
+
+.react-calendar__tile--active {
+    background: var(--primary) !important;
+    border-radius: 8px !important;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+    border-radius: 8px !important;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+    color: #cbd5e1 !important;
+}
+
+.dot {
+    height: 6px;
+    width: 6px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    margin: 2px auto 0;
+}
+
+.tasks-for-date {
+    margin-top: 24px;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 16px;
+    text-align: left;
+}
+
+.tasks-for-date h3 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #000;
+    margin-bottom: 12px;
+}
+
+.tasks-for-date ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tasks-for-date li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #000;
+}
+
+.tasks-for-date li.completed {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.calendar-delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.calendar-delete-btn:hover {
+    color: var(--danger);
+}
+
+.no-tasks {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: center;
+    font-style: italic;
+}

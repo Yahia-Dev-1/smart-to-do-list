@@ -1,0 +1,123 @@
+.home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: var(--container-max);
+    margin: 0 auto;
+    padding: 32px 20px;
+    gap: 32px;
+}
+
+.productivity-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    animation: fadeIn 1s ease-out;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 32px;
+    width: 100%;
+    flex-wrap: wrap;
+}
+
+.addtask-wrapper {
+    flex: 2;
+    min-width: 350px;
+    display: flex;
+    justify-content: center;
+}
+
+.calendar-wrapper {
+    flex: 1;
+    min-width: 320px;
+    max-width: 400px;
+}
+
+/* Alert Modal Redesign - Elite Style */
+.alert-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    /* Lighter background for less "stuck" feeling */
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* Move to top */
+    padding-top: 100px;
+    /* Offset from top */
+    z-index: 2000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.alert-modal>div {
+    background: white;
+    padding: 30px;
+    border-radius: var(--radius-xl);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--primary);
+    /* Added border to make it pop at the top */
+    animation: revealDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes revealDown {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.alert-modal p {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #000000 !important;
+    /* Force black text */
+    margin-bottom: 24px;
+    line-height: 1.4;
+}
+
+.alert-modal .actions button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: var(--radius-md);
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.alert-modal .actions button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow-azure);
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .addtask-wrapper,
+    .calendar-wrapper {
+        width: 100%;
+        max-width: 100%;
+    }
+}
