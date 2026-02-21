@@ -23,8 +23,10 @@ const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production'
 let memoryDb = { users: [], tasks: [] };
 
 // Environment Variable Validation
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 const requiredEnvVars = ['JWT_SECRET', 'GEMINI_API_KEY', 'MONGODB_URI'];
-const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+const missingVars = requiredEnvVars.filter(v => v === 'GEMINI_API_KEY' ? !GEMINI_KEY : !process.env[v]);
+
 if (missingVars.length > 0) {
     console.warn(`[WARNING] Missing Environment Variables: ${missingVars.join(', ')}. Some features will fail.`);
 }
@@ -306,7 +308,8 @@ async function getAvailableModels() {
 }
 
 async function callGemini(prompt, isJson = false) {
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'dummy_key') {
+    const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!activeKey || activeKey === 'dummy_key') {
         throw new Error("GEMINI_API_KEY is missing in Vercel settings. Please add it to your Environment Variables.");
     }
 
