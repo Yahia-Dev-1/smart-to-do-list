@@ -41,6 +41,8 @@ export default function Auth() {
                 }
                 navigate('/');
                 return;
+            } else {
+                console.warn('Server auth rejected request, trying local fallback.');
             }
         } catch (err) {
             console.warn('Server auth failed, falling back to local mode.', err);

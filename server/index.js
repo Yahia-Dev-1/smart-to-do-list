@@ -283,42 +283,12 @@ app.use((req, res, next) => {
     next();
 });
 
-let cachedModels = null;
-
-async function getAvailableModels() {
-    if (cachedModels) return cachedModels;
-
-    try {
-        console.log("Detecting available models...");
-        const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${activeKey}`);
-        const data = await response.json();
-
-        if (!data.models || data.models.length === 0) {
-            throw new Error("No models available for this API key.");
-        }
-
-        // Models that support generateContent
-        const validModels = data.models
-            .filter(m => m.supportedGenerationMethods.includes("generateContent"))
-            .map(m => m.name.replace("models/", ""));
-
-        // Sort by preference (Flash -> Pro)
-        const priorityOrder = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-latest", "gemini-pro"];
-        cachedModels = validModels.sort((a, b) => {
-            const idxA = priorityOrder.findIndex(p => a.includes(p));
-            const idxB = priorityOrder.findIndex(p => b.includes(p));
-            return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
-        });
-
-        console.log(`Found ${cachedModels.length} models: ${cachedModels.join(", ")}`);
-        return cachedModels;
-    } catch (error) {
-        console.error("Model Detection Failed:", error.message);
-        // Diversified fallback list
-        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
-    }
-}
+// Simplified static model list for maximum compatibility
+const STABLE_MODELS = [
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-pro"
+];
 
 async function callGemini(prompt, isJson = false) {
     const client = getAIClient();
@@ -326,10 +296,9 @@ async function callGemini(prompt, isJson = false) {
         throw new Error("GEMINI_API_KEY is missing in Vercel settings. Please add it to your Environment Variables.");
     }
 
-    const models = await getAvailableModels();
     let lastError = null;
 
-    for (const modelName of models) {
+    for (const modelName of STABLE_MODELS) {
         try {
             console.log(`Trying model: ${modelName}...`);
             const model = client.getGenerativeModel({ model: modelName });
@@ -355,7 +324,8 @@ async function callGemini(prompt, isJson = false) {
 
 app.get('/api/models', async (req, res) => {
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${activeKey}`);
         const data = await response.json();
 
         if (data.error) {
