@@ -49,12 +49,12 @@ export const aiEngine = {
                 const mightBeValid = originalText && originalText.length > 1 && !/^[\W\d]+$/.test(originalText);
 
                 if (error.message.includes('429')) {
-                    // API quota exceeded - provide fallback response
-                    return [
-                        { text: `${originalText} - ${lang === 'en' ? 'Step 1' : 'الخطوة 1'}`, duration: 15 },
-                        { text: `${originalText} - ${lang === 'en' ? 'Step 2' : 'الخطوة 2'}`, duration: 15 },
-                        { text: `${originalText} - ${lang === 'en' ? 'Review' : 'مراجعة'}`, duration: 10 }
-                    ];
+                    // API quota exceeded - show clear error message instead of fake steps
+                    return {
+                        error: lang === 'en' ?
+                            'AI service quota exceeded. Please try again later or contact support.' :
+                            'تم تجاوز حد استخدام خدمة الذكاء الاصطناعي. من فضلك حاول مرة أخرى لاحقاً أو اتصل بالدعم.'
+                    };
                 } else if (mightBeValid) {
                     // Let the AI try to process it anyway
                     return {
@@ -78,11 +78,6 @@ export const aiEngine = {
                     'خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً. من فضلك حاول مرة أخرى لاحقاً.')
             };
 
-            return {
-                error: lang === 'en' ?
-                    'AI service temporarily unavailable. Please try again later.' :
-                    'خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً. من فضلك حاول مرة أخرى لاحقاً.'
-            };
         }
     },
 
