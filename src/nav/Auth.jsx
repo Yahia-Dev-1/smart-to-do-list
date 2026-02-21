@@ -33,6 +33,12 @@ export default function Auth() {
 
             if (res.ok) {
                 login(data.token, data.user);
+                // Also save to localUsers for future fallback if server resets
+                const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
+                if (!localUsers.find(u => u.email === formData.email)) {
+                    localUsers.push({ ...formData, id: data.user.id || Date.now() });
+                    localStorage.setItem('localUsers', JSON.stringify(localUsers));
+                }
                 navigate('/');
                 return;
             }

@@ -79,9 +79,9 @@ app.get('/api/health', (req, res) => {
         status: 'ok',
         mongo: isMongoConnected ? 'connected' : 'disconnected',
         environment: {
-            has_gemini: !!process.env.GEMINI_API_KEY,
-            has_mongo_uri: !!process.env.MONGODB_URI,
-            has_jwt_secret: !!process.env.JWT_SECRET,
+            has_gemini: !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'dummy_key',
+            has_mongo_uri: !!process.env.MONGODB_URI && process.env.MONGODB_URI !== 'undefined',
+            has_jwt_secret: !!process.env.JWT_SECRET && process.env.JWT_SECRET !== 'elite_default_secret',
             node_version: process.version
         },
         server_id: SERVER_ID
@@ -306,6 +306,10 @@ async function getAvailableModels() {
 }
 
 async function callGemini(prompt, isJson = false) {
+    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'dummy_key') {
+        throw new Error("GEMINI_API_KEY is missing in Vercel settings. Please add it to your Environment Variables.");
+    }
+
     const models = await getAvailableModels();
     let lastError = null;
 
@@ -314,32 +318,23 @@ async function callGemini(prompt, isJson = false) {
             console.log(`Trying model: ${modelName}...`);
             const model = genAI.getGenerativeModel({ model: modelName });
 
-            // Set safety settings to be more permissive if needed (though usually not the issue here)
-            console.log(`[SERVER ${SERVER_ID}] Calling Gemini with prompt length: ${prompt.length}`);
-            if (prompt.includes("split")) console.log(`[SERVER ${SERVER_ID}] Target: ${prompt.match(/"(.*?)"/)?.[1] || "unknown"}`);
-
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
-            console.log(`[SERVER ${SERVER_ID}] Response received.`);
 
             if (isJson) {
                 const match = text.match(/\[.*\]/s) || text.match(/\{.*\}/s);
                 if (match) return JSON.parse(match[0]);
-                throw new Error("Invalid JSON format from AI");
+                throw new Error("AI responded with invalid JSON format");
             }
             return text.trim();
         } catch (error) {
             console.warn(`Model ${modelName} failed:`, error.message);
             lastError = error;
-            // If it's a quote exceeded error (429), the other models might have quota!
-            if (error.message.includes("429") || error.message.includes("404")) {
-                continue;
-            }
-            // For other errors, maybe stop? No, let's try the next one anyway.
+            if (error.message.includes("429") || error.message.includes("404")) continue;
         }
     }
-    throw lastError;
+    throw new Error(lastError?.message || "AI service is currently unavailable. Please check your API key and quota.");
 }
 
 app.get('/api/models', async (req, res) => {
