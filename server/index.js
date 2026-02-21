@@ -17,10 +17,17 @@ app.use(express.json());
 const PORT = process.env.PORT || 5005;
 const SERVER_ID = Math.random().toString(36).substring(7);
 const DB_PATH = path.join(__dirname, 'db.json');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key');
 const bcrypt = require('bcryptjs');
 const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production';
 let memoryDb = { users: [], tasks: [] };
+
+// Environment Variable Validation
+const requiredEnvVars = ['JWT_SECRET', 'GEMINI_API_KEY', 'MONGODB_URI'];
+const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+    console.warn(`[WARNING] Missing Environment Variables: ${missingVars.join(', ')}. Some features will fail.`);
+}
 
 // Helper for Local JSON DB - Fixed for Serverless (EROFS)
 const getLocalData = () => {
@@ -82,6 +89,7 @@ app.post('/api/auth/register', async (req, res) => {
             if (existingUser) return res.status(400).json({ error: 'User already exists' });
             const user = new User({ username, email, password });
             await user.save();
+            if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured on the server.');
             const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
             return res.status(201).json({ token, user: { username, email } });
         } else {
@@ -90,14 +98,17 @@ app.post('/api/auth/register', async (req, res) => {
             if (data.users.find(u => u.email === email || u.username === username)) {
                 return res.status(400).json({ error: 'User already exists' });
             }
-            const newUser = { id: Date.now().toString(), username, email, password }; // Note: In production, hash this
+            const newUser = { id: Date.now().toString(), username, email, password };
             data.users.push(newUser);
             saveLocalData(data);
+
+            if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured on the server.');
             const token = jwt.sign({ userId: newUser.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
             return res.status(201).json({ token, user: { username, email } });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error(`[REGISTER ERROR] ${err.message}`);
+        res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
 });
 
@@ -115,11 +126,13 @@ app.post('/api/auth/login', async (req, res) => {
             const data = getLocalData();
             const user = data.users.find(u => u.email === email && u.password === password);
             if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+            if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not configured on the server.');
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
             return res.json({ token, user: { username: user.username, email } });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error(`[LOGIN ERROR] ${err.message}`);
+        res.status(500).json({ error: err.message || 'Internal Server Error' });
     }
 });
 
