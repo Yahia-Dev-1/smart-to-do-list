@@ -283,11 +283,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Simplified static model list for maximum compatibility
+// Current 2026 Gemini models (all 1.x models have been retired by Google)
 const STABLE_MODELS = [
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-pro"
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.0-flash"
 ];
 
 async function callGemini(prompt, isJson = false) {
