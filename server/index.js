@@ -16,11 +16,22 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5005;
 const SERVER_ID = Math.random().toString(36).substring(7);
-const DB_PATH = path.join(__dirname, 'db.json');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || 'dummy_key');
-const bcrypt = require('bcryptjs');
 const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const DB_PATH = path.join(__dirname, 'db.json');
+const bcrypt = require('bcryptjs');
 let memoryDb = { users: [], tasks: [] };
+
+// Memory-cached AI client to avoid re-instantiation if not needed
+let genAIInstance = null;
+const getAIClient = () => {
+    const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    if (!activeKey || activeKey === 'dummy_key') return null;
+
+    if (!genAIInstance) {
+        genAIInstance = new GoogleGenerativeAI(activeKey);
+    }
+    return genAIInstance;
+};
 
 // Environment Variable Validation
 const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
@@ -279,7 +290,8 @@ async function getAvailableModels() {
 
     try {
         console.log("Detecting available models...");
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${process.env.GEMINI_API_KEY}`);
+        const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${activeKey}`);
         const data = await response.json();
 
         if (!data.models || data.models.length === 0) {
@@ -303,13 +315,14 @@ async function getAvailableModels() {
         return cachedModels;
     } catch (error) {
         console.error("Model Detection Failed:", error.message);
-        return ["gemini-pro", "gemini-1.5-flash"]; // Hardcoded fallbacks
+        // Diversified fallback list
+        return ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
     }
 }
 
 async function callGemini(prompt, isJson = false) {
-    const activeKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-    if (!activeKey || activeKey === 'dummy_key') {
+    const client = getAIClient();
+    if (!client) {
         throw new Error("GEMINI_API_KEY is missing in Vercel settings. Please add it to your Environment Variables.");
     }
 
@@ -319,7 +332,7 @@ async function callGemini(prompt, isJson = false) {
     for (const modelName of models) {
         try {
             console.log(`Trying model: ${modelName}...`);
-            const model = genAI.getGenerativeModel({ model: modelName });
+            const model = client.getGenerativeModel({ model: modelName });
 
             const result = await model.generateContent(prompt);
             const response = await result.response;
