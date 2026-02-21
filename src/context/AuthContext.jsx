@@ -5,48 +5,25 @@ const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
     const [token, setToken] = useState(localStorage.getItem('token'));
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (token) {
-            // Verify token and fetch user data
-            fetchUser();
-        } else {
-            setLoading(false);
-        }
-    }, [token]);
-
-    const fetchUser = async () => {
-        try {
-            const res = await fetch('/api/auth/me', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const userData = await res.json();
-                setUser(userData);
-            } else {
-                logout();
-            }
-        } catch (err) {
-            console.error('Auth check failed:', err);
-            logout();
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [loading, setLoading] = useState(false); // No longer loading from server
 
     const login = (newToken, userData) => {
         setToken(newToken);
         setUser(userData);
         localStorage.setItem('token', newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
     };
 
     return (

@@ -23,6 +23,7 @@ export default function Auth() {
         const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
         try {
+            // 1. Try server first
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -33,11 +34,37 @@ export default function Auth() {
             if (res.ok) {
                 login(data.token, data.user);
                 navigate('/');
-            } else {
-                setError(data.error || 'Authentication failed');
+                return;
             }
         } catch (err) {
-            setError('Connection error. Please try again.');
+            console.warn('Server auth failed, falling back to local mode.', err);
+        }
+
+        // 2. Local Fallback Mode (If server is down or returns error)
+        try {
+            const localUsers = JSON.parse(localStorage.getItem('localUsers') || '[]');
+
+            if (isLogin) {
+                const foundUser = localUsers.find(u => u.email === formData.email && u.password === formData.password);
+                if (foundUser) {
+                    login('local-token-' + Date.now(), { username: foundUser.username, email: foundUser.email });
+                    navigate('/');
+                } else {
+                    setError(t('auth.invalidCredentials') || 'Invalid credentials');
+                }
+            } else {
+                if (localUsers.find(u => u.email === formData.email)) {
+                    setError('User already exists locally');
+                } else {
+                    const newUser = { ...formData, id: Date.now() };
+                    localUsers.push(newUser);
+                    localStorage.setItem('localUsers', JSON.stringify(localUsers));
+                    login('local-token-' + Date.now(), { username: newUser.username, email: newUser.email });
+                    navigate('/');
+                }
+            }
+        } catch (err) {
+            setError('Authentication error occurred.');
         } finally {
             setLoading(false);
         }
