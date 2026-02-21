@@ -18,16 +18,34 @@ const PORT = process.env.PORT || 5005;
 const SERVER_ID = Math.random().toString(36).substring(7);
 const DB_PATH = path.join(__dirname, 'db.json');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Load bcryptjs for local fallback
 const bcrypt = require('bcryptjs');
+const isServerless = process.env.VERCEL || process.env.NODE_ENV === 'production';
+let memoryDb = { users: [], tasks: [] };
 
-// Helper for Local JSON DB
+// Helper for Local JSON DB - Fixed for Serverless (EROFS)
 const getLocalData = () => {
-    if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, JSON.stringify({ users: [], tasks: [] }));
-    return JSON.parse(fs.readFileSync(DB_PATH));
+    if (isServerless) return memoryDb;
+    try {
+        if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, JSON.stringify({ users: [], tasks: [] }));
+        return JSON.parse(fs.readFileSync(DB_PATH));
+    } catch (e) {
+        console.warn('Filesystem read failed, using memory fallback.');
+        return memoryDb;
+    }
 };
-const saveLocalData = (data) => fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+
+const saveLocalData = (data) => {
+    if (isServerless) {
+        memoryDb = data;
+        return;
+    }
+    try {
+        fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+    } catch (e) {
+        console.error('Filesystem write failed:', e.message);
+        memoryDb = data;
+    }
+};
 
 // MongoDB Connection with Fallback Log
 let isMongoConnected = false;
