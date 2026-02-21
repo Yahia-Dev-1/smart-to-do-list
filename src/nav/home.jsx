@@ -8,6 +8,7 @@ import alarmSound from '../body/alarm.mp3';
 import { requestNotificationPermission, sendNotification } from '../utils/notifications';
 import { useLanguage } from '../App';
 import { useAuth } from '../context/AuthContext';
+import { Check } from 'lucide-react';
 
 export default function Home() {
   const { lang, t } = useLanguage();
@@ -17,21 +18,13 @@ export default function Home() {
   const todosKey = user ? `todos_${user.username}` : "todos_guest";
   const historyKey = user ? `history_${user.username}` : "history_guest";
 
-  const [Todos, setTodos] = useState(() => {
-    const saved = getFromLocalStorage(todosKey, []);
-    return Array.isArray(saved) ? saved : [];
-  });
+  // State for the currently displayed tasks
+  const [Todos, setTodos] = useState([]);
+  const loadedKeyRef = useRef(null);
 
   const [productivityCount, setProductivityCount] = useState(0);
   const [activeAlert, setActiveAlert] = useState(null);
   const audioRef = useRef(new Audio(alarmSound));
-
-  // Sync with user-specific storage whenever Todos change
-  useEffect(() => {
-    if (user) {
-      saveToLocalStorage(todosKey, Todos);
-    }
-  }, [Todos, todosKey, user]);
 
   const updateProductivity = () => {
     if (!user) return;
@@ -40,6 +33,22 @@ export default function Home() {
     const todayCount = history.filter(t => t.date === todayStr || t.completedAt?.startsWith(todayStr)).length;
     setProductivityCount(todayCount);
   };
+
+  // Load user-specific tasks whenever the user changes
+  useEffect(() => {
+    const saved = getFromLocalStorage(todosKey, []);
+    setTodos(Array.isArray(saved) ? saved : []);
+    loadedKeyRef.current = todosKey;
+    updateProductivity();
+  }, [todosKey]);
+
+  // Sync with user-specific storage whenever Todos change
+  useEffect(() => {
+    // Only save if we have loaded the data for the CURRENT active key
+    if (loadedKeyRef.current === todosKey) {
+      saveToLocalStorage(todosKey, Todos);
+    }
+  }, [Todos, todosKey]);
 
   const onTaskComplete = (taskText) => {
     updateProductivity();
@@ -87,11 +96,19 @@ export default function Home() {
       </div>
 
       {activeAlert && (
-        <div className="alert-modal" onClick={(e) => e.stopPropagation()}>
-          <div>
-            <p>{t('home.executionConfirmed')(activeAlert)}</p>
-            <div className="actions">
-              <button onClick={closeAlert}>{t('home.acknowledge')}</button>
+        <div className="alert-modal" onClick={closeAlert}>
+          <div className="alert-glass-card" onClick={(e) => e.stopPropagation()}>
+            <div className="alert-icon-circle">
+              <Check size={32} />
+            </div>
+            <div className="alert-content">
+              <h3>{t('home.executionConfirmedTitle') || 'Execution Confirmed'}</h3>
+              <p>{t('home.executionConfirmed')(activeAlert)}</p>
+            </div>
+            <div className="alert-actions">
+              <button onClick={closeAlert} className="acknowledge-btn">
+                {t('home.acknowledge')}
+              </button>
             </div>
           </div>
         </div>

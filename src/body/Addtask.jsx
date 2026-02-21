@@ -191,11 +191,13 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
           groupTitle: groupTitle
         });
       }
-      // Filter out tasks from locked days when adding new ones
-      const nonLockedTasks = Todos.filter(todo => !lockedDays.includes(todo.date));
-      setTodos([...newTasks, ...nonLockedTasks]);
+      setTodos([...newTasks, ...Todos]);
     } else {
       const duration = parseInt(durationRef.current?.value) || 0;
+      if (duration <= 0) {
+        alert(lang === 'en' ? 'Please enter a duration for custom tasks' : 'من فضلك أدخل الوقت للمهمة المخصصة');
+        return;
+      }
       const newTodo = {
         text,
         completed: false,
@@ -206,9 +208,7 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
         stopped: false,
         date: today
       };
-      // Filter out tasks from locked days when adding new ones
-      const nonLockedTasks = Todos.filter(todo => !lockedDays.includes(todo.date));
-      setTodos([newTodo, ...nonLockedTasks]);
+      setTodos([newTodo, ...Todos]);
     }
 
     inputRef.current.value = "";

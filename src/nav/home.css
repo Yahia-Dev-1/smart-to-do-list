@@ -39,7 +39,7 @@
     max-width: 400px;
 }
 
-/* Alert Modal Redesign - Elite Style */
+/* Premium Alert Modal Redesign */
 .alert-modal {
     position: fixed;
     top: 0;
@@ -47,66 +47,122 @@
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.4);
-    /* Lighter background for less "stuck" feeling */
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    /* Move to top */
-    padding-top: 100px;
-    /* Offset from top */
-    z-index: 2000;
-    animation: fadeIn 0.3s ease-out;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: alertFadeIn 0.3s ease-out;
 }
 
-.alert-modal>div {
-    background: white;
-    padding: 30px;
-    border-radius: var(--radius-xl);
-    max-width: 500px;
-    width: 90%;
+.alert-glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
     text-align: center;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    border: 2px solid var(--primary);
-    /* Added border to make it pop at the top */
-    animation: revealDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    animation: alertPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes revealDown {
+.alert-glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+}
+
+.alert-icon-circle {
+    width: 80px;
+    height: 80px;
+    background: #f0fdf4;
+    color: #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    box-shadow: 0 10px 15px -3px rgba(34, 197, 94, 0.2);
+    animation: iconBounce 0.6s 0.2s both;
+}
+
+.alert-content h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 12px;
+}
+
+.alert-content p {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 32px;
+}
+
+.alert-actions .acknowledge-btn {
+    width: 100%;
+    background: #1e293b;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-actions .acknowledge-btn:hover {
+    background: #0f172a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes alertFadeIn {
     from {
         opacity: 0;
-        transform: translateY(-50px);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
-.alert-modal p {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #000000 !important;
-    /* Force black text */
-    margin-bottom: 24px;
-    line-height: 1.4;
+@keyframes alertPop {
+    from {
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
 }
 
-.alert-modal .actions button {
-    background: var(--primary);
-    color: white;
-    border: none;
-    padding: 12px 32px;
-    border-radius: var(--radius-md);
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s;
-}
+@keyframes iconBounce {
 
-.alert-modal .actions button:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--glow-azure);
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 @media (max-width: 900px) {

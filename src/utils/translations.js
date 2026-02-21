@@ -33,6 +33,7 @@ export const translations = {
             flushList: "Flush Task List",
             pendingTasks: "Pending Tasks",
             pendingTasksMsg: (count) => `You have ${count} incomplete tasks for today's schedule.`,
+            executionConfirmedTitle: "Execution Confirmed",
             executionConfirmed: (task) => `Execution of "${task}" confirmed.`,
             acknowledge: "Acknowledge"
         },
@@ -111,6 +112,7 @@ export const translations = {
             flushList: "مسح قائمة المهام",
             pendingTasks: "مهام معلقة",
             pendingTasksMsg: (count) => `لديك ${count} مهام غير مكتملة في جدول اليوم.`,
+            executionConfirmedTitle: "تم تأكيد التنفيذ",
             executionConfirmed: (task) => `تم تأكيد تنفيذ "${task}".`,
             acknowledge: "تأكيد"
         },
