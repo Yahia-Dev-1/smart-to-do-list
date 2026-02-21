@@ -56,14 +56,37 @@ const saveLocalData = (data) => {
 
 // MongoDB Connection with Fallback Log
 let isMongoConnected = false;
-mongoose.connect(process.env.MONGODB_URI, { connectTimeoutMS: 5000 })
-    .then(() => {
-        isMongoConnected = true;
-        console.log('Connected to MongoDB - Real persistence active');
+if (process.env.MONGODB_URI) {
+    mongoose.connect(process.env.MONGODB_URI, {
+        connectTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 5000
     })
-    .catch(err => {
-        console.log('MongoDB unreachable. Falling back to local db.json for session.');
+        .then(() => {
+            isMongoConnected = true;
+            console.log('Connected to MongoDB - Real persistence active');
+        })
+        .catch(err => {
+            console.warn('MongoDB connection failed. Falling back to memory session.');
+            isMongoConnected = false;
+        });
+} else {
+    console.warn('MONGODB_URI missing. Using in-memory database (NO PERSISTENCE).');
+}
+
+// Health check for troubleshooting Vercel
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        mongo: isMongoConnected ? 'connected' : 'disconnected',
+        environment: {
+            has_gemini: !!process.env.GEMINI_API_KEY,
+            has_mongo_uri: !!process.env.MONGODB_URI,
+            has_jwt_secret: !!process.env.JWT_SECRET,
+            node_version: process.version
+        },
+        server_id: SERVER_ID
     });
+});
 
 // Auth Middleware
 const authenticate = (req, res, next) => {
