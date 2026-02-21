@@ -7,23 +7,35 @@ import { saveToLocalStorage, getFromLocalStorage } from '../utils/localStorage';
 import alarmSound from '../body/alarm.mp3';
 import { requestNotificationPermission, sendNotification } from '../utils/notifications';
 import { useLanguage } from '../App';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
   const { lang, t } = useLanguage();
+  const { user } = useAuth();
+
+  // User-specific storage keys
+  const todosKey = user ? `todos_${user.username}` : "todos_guest";
+  const historyKey = user ? `history_${user.username}` : "history_guest";
+
   const [Todos, setTodos] = useState(() => {
-    const saved = getFromLocalStorage("todos", []);
+    const saved = getFromLocalStorage(todosKey, []);
     return Array.isArray(saved) ? saved : [];
   });
+
   const [productivityCount, setProductivityCount] = useState(0);
   const [activeAlert, setActiveAlert] = useState(null);
   const audioRef = useRef(new Audio(alarmSound));
 
+  // Sync with user-specific storage whenever Todos change
   useEffect(() => {
-    saveToLocalStorage("todos", Todos);
-  }, [Todos]);
+    if (user) {
+      saveToLocalStorage(todosKey, Todos);
+    }
+  }, [Todos, todosKey, user]);
 
   const updateProductivity = () => {
-    const history = getFromLocalStorage('history', []);
+    if (!user) return;
+    const history = getFromLocalStorage(historyKey, []);
     const todayStr = new Date().toISOString().split('T')[0];
     const todayCount = history.filter(t => t.date === todayStr || t.completedAt?.startsWith(todayStr)).length;
     setProductivityCount(todayCount);

@@ -19,7 +19,8 @@ export const aiEngine = {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const errorBody = await response.json().catch(() => ({}));
+                throw new Error(errorBody.error || `HTTP ${response.status}: ${response.statusText}`);
             }
 
             const result = await response.json();
@@ -71,13 +72,11 @@ export const aiEngine = {
                 }
             }
 
-            if (error.message.includes('HTTP')) {
-                return {
-                    error: lang === 'en' ?
-                        'Connection error: Please check your internet connection.' :
-                        'خطأ في الاتصال: من فضلك تحقق من اتصالك بالإنترنت.'
-                };
-            }
+            return {
+                error: error.message || (lang === 'en' ?
+                    'AI service temporarily unavailable. Please try again later.' :
+                    'خدمة الذكاء الاصطناعي غير متوفرة مؤقتاً. من فضلك حاول مرة أخرى لاحقاً.')
+            };
 
             return {
                 error: lang === 'en' ?

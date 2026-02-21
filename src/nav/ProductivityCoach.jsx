@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { aiEngine } from '../utils/aiEngine';
 import { getFromLocalStorage } from '../utils/localStorage';
 import { useLanguage } from '../App';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductivityCoach({ currentTasks }) {
     const [coachData, setCoachData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const { lang, t } = useLanguage();
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchCoachMessage = async () => {
             setIsLoading(true);
             try {
-                const history = getFromLocalStorage('history', []);
+                const historyKey = user ? `history_${user.username}` : 'history_guest';
+                const history = getFromLocalStorage(historyKey, []);
                 const result = await aiEngine.getCoachMessage(history, currentTasks, lang);
                 if (result?.data) {
                     setCoachData(result.data);

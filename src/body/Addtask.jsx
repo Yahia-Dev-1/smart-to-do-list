@@ -31,7 +31,8 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
 
   // Track locked days
   const [lockedDays, setLockedDays] = useState(() => {
-    const saved = localStorage.getItem('lockedDays');
+    const key = user ? `lockedDays_${user.username}` : 'lockedDays_guest';
+    const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -52,7 +53,8 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
             if (!lockedDays.includes(previousDay)) {
               const newLockedDays = [...lockedDays, previousDay];
               setLockedDays(newLockedDays);
-              localStorage.setItem('lockedDays', JSON.stringify(newLockedDays));
+              const key = user ? `lockedDays_${user.username}` : 'lockedDays_guest';
+              localStorage.setItem(key, JSON.stringify(newLockedDays));
             }
 
             const newDayStart = new Date();
@@ -60,7 +62,8 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
             localStorage.setItem('dayStartTime', newDayStart.toISOString());
 
             const completedTasks = prevTodos.filter(todo => todo.completed);
-            const currentHistory = getFromLocalStorage('history', []);
+            const historyKey = user ? `history_${user.username}` : 'history_guest';
+            const currentHistory = getFromLocalStorage(historyKey, []);
 
             const historyWithPreviousDay = [
               ...completedTasks.map(task => ({
@@ -93,7 +96,8 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
     const completedTaskIndex = Todos.findIndex(todo => todo.isRunning && todo.timeLeft === 0);
     if (completedTaskIndex !== -1) {
       const task = Todos[completedTaskIndex];
-      const currentHistory = getFromLocalStorage('history', []);
+      const historyKey = user ? `history_${user.username}` : 'history_guest';
+      const currentHistory = getFromLocalStorage(historyKey, []);
       const historyItem = {
         ...task,
         completed: true,
@@ -101,7 +105,7 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
         timeLeft: task.duration,
         completedAt: new Date().toISOString()
       };
-      saveToLocalStorage('history', [historyItem, ...currentHistory]);
+      saveToLocalStorage(historyKey, [historyItem, ...currentHistory]);
       if (onTaskComplete) onTaskComplete(task.text);
       setTodos(prev => {
         const newTodos = [...prev];
@@ -140,50 +144,56 @@ function Addtask({ Todos, setTodos, onTaskComplete }) {
     }
 
     if (selectedSystem === "short" || selectedSystem === "long") {
-      const hours = parseFloat(totalHoursRef.current?.value);
-      if (hours && hours > 0) {
-        const totalMins = hours * 60;
-        const workTime = selectedSystem === "short" ? 25 : 45;
-        const breakTime = selectedSystem === "short" ? 5 : 15;
-        const cycleTime = workTime + breakTime;
-        const count = Math.floor(totalMins / cycleTime);
-        const cycles = count < 1 ? 1 : count;
-        const groupId = Date.now().toString();
-        const groupTitle = `${text} (${hours}${lang === 'en' ? 'h' : ' س'})`;
+      const hoursInput = totalHoursRef.current?.value;
+      const hours = parseFloat(hoursInput) || 0;
 
-        const newTasks = [];
-        for (let i = 0; i < cycles; i++) {
-          newTasks.push({
-            text: `${text} (${lang === 'en' ? 'Part' : 'جزء'} ${i + 1})`,
-            completed: false,
-            duration: workTime * 60,
-            timeLeft: workTime * 60,
-            system: selectedSystem,
-            isRunning: false,
-            stopped: false,
-            date: today,
-            type: 'work',
-            groupId: groupId,
-            groupTitle: groupTitle
-          });
-          newTasks.push({
-            text: `${lang === 'en' ? 'Rest Break' : 'استراحة'} (${i + 1})`,
-            completed: false,
-            duration: breakTime * 60,
-            timeLeft: breakTime * 60,
-            system: selectedSystem,
-            isRunning: false,
-            stopped: false,
-            date: today,
-            type: 'rest',
-            groupId: groupId,
-            groupTitle: groupTitle
-          });
-        }
-        // Filter out tasks from locked days when adding new ones
-        const nonLockedTasks = Todos.filter(todo => !lockedDays.includes(todo.date));
-        setTodos([...newTasks, ...nonLockedTasks]);
+      const workTime = selectedSystem === "short" ? 25 : 45;
+      const breakTime = selectedSystem === "short" ? 5 : 15;
+      const cycleTime = workTime + breakTime;
+
+      // Default to 1 cycle if hours not provided
+      let cycles = 1;
+      if (hours > 0) {
+        const totalMins = hours * 60;
+        const count = Math.floor(totalMins / cycleTime);
+        cycles = count < 1 ? 1 : count;
       }
+
+      const groupId = Date.now().toString();
+      const groupTitle = hours > 0 ? `${text} (${hours}${lang === 'en' ? 'h' : ' س'})` : text;
+
+      const newTasks = [];
+      for (let i = 0; i < cycles; i++) {
+        newTasks.push({
+          text: cycles > 1 ? `${text} (${lang === 'en' ? 'Part' : 'جزء'} ${i + 1})` : text,
+          completed: false,
+          duration: workTime * 60,
+          timeLeft: workTime * 60,
+          system: selectedSystem,
+          isRunning: false,
+          stopped: false,
+          date: today,
+          type: 'work',
+          groupId: groupId,
+          groupTitle: groupTitle
+        });
+        newTasks.push({
+          text: `${lang === 'en' ? 'Rest Break' : 'استراحة'} ${cycles > 1 ? `(${i + 1})` : ''}`,
+          completed: false,
+          duration: breakTime * 60,
+          timeLeft: breakTime * 60,
+          system: selectedSystem,
+          isRunning: false,
+          stopped: false,
+          date: today,
+          type: 'rest',
+          groupId: groupId,
+          groupTitle: groupTitle
+        });
+      }
+      // Filter out tasks from locked days when adding new ones
+      const nonLockedTasks = Todos.filter(todo => !lockedDays.includes(todo.date));
+      setTodos([...newTasks, ...nonLockedTasks]);
     } else {
       const duration = parseInt(durationRef.current?.value) || 0;
       const newTodo = {
